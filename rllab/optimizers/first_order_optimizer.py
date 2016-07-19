@@ -6,6 +6,7 @@ from rllab.optimizers.minibatch_dataset import BatchDataset
 from collections import OrderedDict
 import time
 import lasagne.updates
+import theano.tensor as T
 from functools import partial
 
 
@@ -17,7 +18,7 @@ class FirstOrderOptimizer(Serializable):
     def __init__(
             self,
             update_method=lasagne.updates.adam,
-            learning_rate=1e-3,
+            learning_rate_computation=lambda: 1e-3,
             max_epochs=1000,
             tolerance=1e-6,
             batch_size=32,
@@ -38,7 +39,9 @@ class FirstOrderOptimizer(Serializable):
         self._opt_fun = None
         self._target = None
         self._callback = callback
-        update_method = partial(update_method, learning_rate=learning_rate)
+        self._learning_rate_computation = learning_rate_computation
+        self._learning_rate = T.scalar(name='learning_rate')
+        update_method = partial(update_method, learning_rate=self._learning_rate)
         self._update_method = update_method
         self._max_epochs = max_epochs
         self._tolerance = tolerance
@@ -62,6 +65,7 @@ class FirstOrderOptimizer(Serializable):
 
         if extra_inputs is None:
             extra_inputs = list()
+        extra_inputs.append(self._learning_rate)
 
         self._opt_fun = ext.lazydict(
             f_loss=lambda: ext.compile_function(inputs + extra_inputs, loss),
@@ -72,10 +76,13 @@ class FirstOrderOptimizer(Serializable):
             )
         )
 
+    def call_function(self, function, inputs, extra_inputs=tuple()):
+        return function(*(tuple(inputs) + extra_inputs + (self._learning_rate_computation(), )))
+
     def loss(self, inputs, extra_inputs=None):
         if extra_inputs is None:
             extra_inputs = tuple()
-        return self._opt_fun["f_loss"](*(tuple(inputs) + extra_inputs))
+        return self.call_function(self._opt_fun["f_loss"], inputs, extra_inputs)
 
     def optimize(self, inputs, extra_inputs=None, callback=None):
 
@@ -89,7 +96,7 @@ class FirstOrderOptimizer(Serializable):
         if extra_inputs is None:
             extra_inputs = tuple()
 
-        last_loss = f_loss(*(tuple(inputs) + extra_inputs))
+        last_loss = self.call_function(f_loss, inputs, extra_inputs)
 
         start_time = time.time()
 
@@ -99,9 +106,9 @@ class FirstOrderOptimizer(Serializable):
             if self._verbose:
                 logger.log("Epoch %d" % epoch)
             for batch in dataset.iterate(update=True):
-                f_opt(*batch)
+                self.call_function(f_opt, batch)
 
-            new_loss = f_loss(*(tuple(inputs) + extra_inputs))
+            new_loss = self.call_function(f_loss, inputs, extra_inputs)
 
             if self._callback or callback:
                 elapsed = time.time() - start_time
