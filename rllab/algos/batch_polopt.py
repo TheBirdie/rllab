@@ -7,7 +7,6 @@ from rllab.algos import util
 import rllab.misc.logger as logger
 import rllab.plotter as plotter
 
-
 class BatchPolopt(RLAlgorithm):
     """
     Base class for batch sampling-based policy optimization methods.
@@ -31,6 +30,7 @@ class BatchPolopt(RLAlgorithm):
             positive_adv=False,
             store_paths=False,
             whole_paths=True,
+            iter_counter=None,
             **kwargs
     ):
         """
@@ -66,6 +66,7 @@ class BatchPolopt(RLAlgorithm):
         self.positive_adv = positive_adv
         self.store_paths = store_paths
         self.whole_paths = whole_paths
+        self.iter_counter = iter_counter
 
     def start_worker(self):
         parallel_sampler.populate_task(self.env, self.policy)
@@ -79,6 +80,8 @@ class BatchPolopt(RLAlgorithm):
         self.start_worker()
         self.init_opt()
         for itr in xrange(self.start_itr, self.n_itr):
+            if self.iter_counter is not None:
+                self.iter_counter.begin_iter(itr)
             with logger.prefix('itr #%d | ' % itr):
                 paths = self.obtain_samples(itr)
                 samples_data = self.process_samples(itr, paths)
