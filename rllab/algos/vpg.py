@@ -96,7 +96,7 @@ class VPG(BatchPolopt, Serializable):
         if is_recurrent:
             input_list.append(valid_var)
 
-        self.optimizer.update_opt(surr_obj, target=self.policy, inputs=input_list)
+        self.optimizer.update_opt(self.modify_loss(surr_obj), target=self.policy, inputs=input_list)
 
         f_kl = ext.compile_function(
             inputs=input_list + old_dist_info_vars_list,

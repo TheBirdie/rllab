@@ -85,7 +85,7 @@ class NPO(BatchPolopt):
             input_list.append(valid_var)
 
         self.optimizer.update_opt(
-            loss=surr_loss,
+            loss=self.modify_loss(surr_loss),
             target=self.policy,
             leq_constraint=(mean_kl, self.step_size),
             inputs=input_list,

@@ -31,6 +31,7 @@ class BatchPolopt(RLAlgorithm):
             store_paths=False,
             whole_paths=True,
             iter_counter=None,
+            additional_loss=None,
             **kwargs
     ):
         """
@@ -67,6 +68,7 @@ class BatchPolopt(RLAlgorithm):
         self.store_paths = store_paths
         self.whole_paths = whole_paths
         self.iter_counter = iter_counter
+        self.additional_loss = additional_loss
 
     def start_worker(self):
         parallel_sampler.populate_task(self.env, self.policy)
@@ -127,6 +129,11 @@ class BatchPolopt(RLAlgorithm):
     def update_plot(self):
         if self.plot:
             plotter.update_plot(self.policy, self.max_path_length)
+
+    def modify_loss(self, loss):
+        if self.additional_loss is None:
+            return loss
+        return loss + self.additional_loss
 
     def obtain_samples(self, itr):
         cur_params = self.policy.get_param_values()
