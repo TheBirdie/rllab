@@ -46,6 +46,14 @@ class DiagonalGaussian(Distribution):
                0.5 * TT.sum(TT.square(zs), axis=-1) - \
                0.5 * means.shape[-1] * np.log(2 * np.pi)
 
+    def log_likelihood_sym_split_actions(self, x_var, dist_info_vars):
+        means = dist_info_vars["mean"]
+        log_stds = dist_info_vars["log_std"]
+        zs = (x_var - means) / TT.exp(log_stds)
+        return - log_stds - \
+              0.5 * TT.square(zs) - \
+              0.5 * means.shape[-1] * np.log(2 * np.pi)
+
     def sample(self, dist_info):
         means = dist_info["mean"]
         log_stds = dist_info["log_std"]

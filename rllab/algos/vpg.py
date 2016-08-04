@@ -50,7 +50,7 @@ class VPG(BatchPolopt, Serializable):
         )
         advantage_var = ext.new_tensor(
             'advantage',
-            ndim=1 + is_recurrent,
+            ndim=2 + is_recurrent,
             dtype=theano.config.floatX
         )
         dist = self.policy.distribution
@@ -79,6 +79,7 @@ class VPG(BatchPolopt, Serializable):
 
         dist_info_vars = self.policy.dist_info_sym(obs_var, state_info_vars)
         logli = dist.log_likelihood_sym(action_var, dist_info_vars)
+        logli_split_actions = dist.log_likelihood_sym_split_actions(action_var, dist_info_vars)
         kl = dist.kl_sym(old_dist_info_vars, dist_info_vars)
 
         # formulate as a minimization problem
@@ -88,7 +89,7 @@ class VPG(BatchPolopt, Serializable):
             mean_kl = TT.sum(kl * valid_var) / TT.sum(valid_var)
             max_kl = TT.max(kl * valid_var)
         else:
-            surr_obj = - TT.mean(logli * advantage_var)
+            surr_obj = - TT.mean(logli_split_actions * advantage_var)
             mean_kl = TT.mean(kl)
             max_kl = TT.max(kl)
 

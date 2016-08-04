@@ -149,11 +149,11 @@ class BatchPolopt(RLAlgorithm):
             return paths_truncated
 
     def process_samples(self, itr, paths):
-
         baselines = []
         returns = []
         for path in paths:
-            path_baselines = np.append(self.baseline.predict(path), 0)
+            path_baseline_predict = self.baseline.predict(path)
+            path_baselines = np.append(path_baseline_predict, [np.zeros_like(path_baseline_predict[0])], axis=0)
             deltas = path["rewards"] + \
                      self.discount * path_baselines[1:] - \
                      path_baselines[:-1]
@@ -184,10 +184,7 @@ class BatchPolopt(RLAlgorithm):
 
             ent = np.mean(self.policy.distribution.entropy(agent_infos))
 
-            ev = special.explained_variance_1d(
-                np.concatenate(baselines),
-                np.concatenate(returns)
-            )
+            ev = 0 #special.explained_variance_1d(np.concatenate(baselines), np.concatenate(returns))
 
             samples_data = dict(
                 observations=observations,

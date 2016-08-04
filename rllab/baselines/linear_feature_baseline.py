@@ -34,5 +34,5 @@ class LinearFeatureBaseline(Baseline):
     @overrides
     def predict(self, path):
         if self._coeffs is None:
-            return np.zeros(len(path["rewards"]))
+            return np.zeros_like(path["rewards"])
         return self._features(path).dot(self._coeffs)
