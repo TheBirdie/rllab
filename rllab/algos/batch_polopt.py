@@ -151,6 +151,7 @@ class BatchPolopt(RLAlgorithm):
     def process_samples(self, itr, paths):
         baselines = []
         returns = []
+        avg_global_score = []
         for path in paths:
             path_baseline_predict = self.baseline.predict(path)
             path_baselines = np.append(path_baseline_predict, [np.zeros_like(path_baseline_predict[0])], axis=0)
@@ -162,6 +163,7 @@ class BatchPolopt(RLAlgorithm):
             path["returns"] = special.discount_cumsum(path["rewards"], self.discount)
             baselines.append(path_baselines[:-1])
             returns.append(path["returns"])
+            avg_global_score.append(path["global_score"])
 
         if not self.policy.recurrent:
             observations = tensor_utils.concat_tensor_list([path["observations"] for path in paths])
@@ -259,6 +261,7 @@ class BatchPolopt(RLAlgorithm):
         logger.log("fitted")
 
         logger.record_tabular('Iteration', itr)
+        logger.record_tabular("GlobalScore", np.mean(avg_global_score))
         logger.record_tabular('AverageDiscountedReturn',
                               average_discounted_return)
         logger.record_tabular('AverageReturn', np.mean(undiscounted_returns))

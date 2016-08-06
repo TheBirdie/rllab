@@ -78,6 +78,12 @@ class Env(object):
         """
         pass
 
+    def global_score(self):
+        """
+        If using local rewards, this functions can be used to give a global reward
+        score displayed for the run.
+        """
+        return 0
 
 _Step = collections.namedtuple("Step", ["observation", "reward", "done", "info"])
 
